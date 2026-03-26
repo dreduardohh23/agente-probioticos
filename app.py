@@ -333,14 +333,14 @@ TOOLS = [
 ]
 
 
-def get_ai_response(messages, api_key):
+def get_ai_response(messages, api_key, modelo="claude-3-5-sonnet-20241022"):
     """Get response from Claude with tool use support."""
     client = anthropic.Anthropic(api_key=api_key)
 
     # Initial call
     response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=8192,
+        model=modelo,
+        max_tokens=4096,
         system=SYSTEM_PROMPT,
         tools=TOOLS,
         messages=messages
@@ -391,8 +391,8 @@ def get_ai_response(messages, api_key):
         ]
 
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=8192,
+            model=modelo,
+            max_tokens=4096,
             system=SYSTEM_PROMPT,
             tools=TOOLS,
             messages=messages
@@ -414,14 +414,40 @@ with st.sidebar:
     st.markdown("### ⚙️ Configuracion")
 
     # API Key
-    api_key = st.text_input(
+    api_key_raw = st.text_input(
         "Anthropic API Key",
         type="password",
         placeholder="sk-ant-...",
         help="Obtener en console.anthropic.com"
     )
+    api_key = api_key_raw.strip() if api_key_raw else ""
+
+    # Model selector
+    modelo = st.selectbox(
+        "Modelo Claude",
+        ["claude-3-5-sonnet-20241022", "claude-sonnet-4-20250514", "claude-3-haiku-20240307"],
+        index=0,
+        help="Si un modelo da error, prueba otro"
+    )
 
     if api_key:
+        if st.button("🔌 Probar conexion"):
+            try:
+                test_client = anthropic.Anthropic(api_key=api_key)
+                test_resp = test_client.messages.create(
+                    model=modelo,
+                    max_tokens=50,
+                    messages=[{"role": "user", "content": "Di solo: Conexion exitosa"}]
+                )
+                st.success(f"✅ Conexion OK con {modelo}")
+            except anthropic.AuthenticationError:
+                st.error("❌ API Key invalida. Revisa que la copiaste completa desde console.anthropic.com")
+            except anthropic.PermissionDeniedError:
+                st.error("❌ Tu plan no tiene acceso a este modelo. Prueba otro modelo del selector.")
+            except anthropic.NotFoundError:
+                st.error("❌ Modelo no disponible. Selecciona otro modelo.")
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
         st.success("✅ API Key configurada")
     else:
         st.warning("⚠️ Ingresa tu API Key para comenzar")
@@ -579,7 +605,7 @@ if prompt := st.chat_input("Pregunta al Agente Probioticos...") or st.session_st
     with st.chat_message("assistant", avatar="🧬"):
         with st.spinner("Pensando..."):
             try:
-                response = get_ai_response(api_messages, api_key)
+                response = get_ai_response(api_messages, api_key, modelo)
                 st.markdown(response)
 
                 # Add to history
@@ -587,12 +613,16 @@ if prompt := st.chat_input("Pregunta al Agente Probioticos...") or st.session_st
                     "role": "assistant",
                     "content": response
                 })
-            except anthropic.AuthenticationError:
-                st.error("❌ API Key invalida. Verifica tu clave en console.anthropic.com")
+            except anthropic.AuthenticationError as e:
+                st.error(f"❌ API Key invalida. Verifica tu clave en console.anthropic.com\n\nDetalle: {str(e)}")
+            except anthropic.PermissionDeniedError as e:
+                st.error(f"❌ Permiso denegado. Tu API Key puede no tener acceso al modelo. Detalle: {str(e)}")
+            except anthropic.NotFoundError as e:
+                st.error(f"❌ Modelo no encontrado. Detalle: {str(e)}")
             except anthropic.RateLimitError:
                 st.error("⏳ Limite de velocidad alcanzado. Espera un momento e intenta de nuevo.")
             except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
+                st.error(f"❌ Error: {type(e).__name__}: {str(e)}")
 
 
 # ── Welcome message if no chat history ──
