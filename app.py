@@ -413,14 +413,20 @@ def get_ai_response(messages, api_key, modelo="claude-3-5-sonnet-20241022"):
 with st.sidebar:
     st.markdown("### ⚙️ Configuracion")
 
-    # API Key
+    # API Key - persists in session state
+    if "api_key_saved" not in st.session_state:
+        st.session_state.api_key_saved = ""
+
     api_key_raw = st.text_input(
         "Anthropic API Key",
         type="password",
+        value=st.session_state.api_key_saved,
         placeholder="sk-ant-...",
-        help="Obtener en console.anthropic.com"
+        help="Obtener en console.anthropic.com. Se guarda mientras la pestana este abierta."
     )
     api_key = api_key_raw.strip() if api_key_raw else ""
+    if api_key:
+        st.session_state.api_key_saved = api_key
 
     # Model selector
     modelo = st.selectbox(
