@@ -454,6 +454,23 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # Report download
+    st.markdown("### 📄 Reporte Estrategico")
+    report_path = os.path.join(os.path.dirname(__file__), "Agente_Probioticos_Reporte_Estrategico.docx")
+    if os.path.exists(report_path):
+        with open(report_path, "rb") as f:
+            st.download_button(
+                label="⬇️ Descargar Reporte (.docx)",
+                data=f.read(),
+                file_name="Agente_Probioticos_Reporte_Estrategico.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        st.caption("Reporte compilado con toda la investigacion")
+    else:
+        st.info("Reporte no disponible")
+
+    st.markdown("---")
+
     # File upload
     st.markdown("### 📎 Subir Archivos")
     uploaded_files = st.file_uploader(
