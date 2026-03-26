@@ -413,20 +413,41 @@ def get_ai_response(messages, api_key, modelo="claude-3-5-sonnet-20241022"):
 with st.sidebar:
     st.markdown("### ⚙️ Configuracion")
 
-    # API Key - persists in session state
-    if "api_key_saved" not in st.session_state:
-        st.session_state.api_key_saved = ""
+    # ── Team authentication ──
+    TEAM_PASSWORD = st.secrets.get("TEAM_PASSWORD", "")
+    API_KEY_SECRET = st.secrets.get("ANTHROPIC_API_KEY", "")
 
-    api_key_raw = st.text_input(
-        "Anthropic API Key",
-        type="password",
-        value=st.session_state.api_key_saved,
-        placeholder="sk-ant-...",
-        help="Obtener en console.anthropic.com. Se guarda mientras la pestana este abierta."
-    )
-    api_key = api_key_raw.strip() if api_key_raw else ""
-    if api_key:
-        st.session_state.api_key_saved = api_key
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+
+    if API_KEY_SECRET and TEAM_PASSWORD:
+        # Mode: team access with password
+        if not st.session_state.authenticated:
+            pwd = st.text_input("Password del equipo", type="password", placeholder="Ingresa el password")
+            if pwd:
+                if pwd.strip() == TEAM_PASSWORD:
+                    st.session_state.authenticated = True
+                    st.rerun()
+                else:
+                    st.error("❌ Password incorrecto")
+        if st.session_state.authenticated:
+            st.success("✅ Acceso autorizado")
+            api_key = API_KEY_SECRET
+        else:
+            api_key = ""
+    else:
+        # Fallback: manual API key (for local dev or if secrets not configured)
+        api_key_raw = st.text_input(
+            "Anthropic API Key",
+            type="password",
+            placeholder="sk-ant-...",
+            help="Obtener en console.anthropic.com"
+        )
+        api_key = api_key_raw.strip() if api_key_raw else ""
+        if api_key:
+            st.success("✅ API Key configurada")
+        else:
+            st.warning("⚠️ Ingresa tu API Key para comenzar")
 
     # Model selector
     modelo = st.selectbox(
@@ -435,28 +456,6 @@ with st.sidebar:
         index=0,
         help="Si un modelo da error, prueba otro"
     )
-
-    if api_key:
-        if st.button("🔌 Probar conexion"):
-            try:
-                test_client = anthropic.Anthropic(api_key=api_key)
-                test_resp = test_client.messages.create(
-                    model=modelo,
-                    max_tokens=50,
-                    messages=[{"role": "user", "content": "Di solo: Conexion exitosa"}]
-                )
-                st.success(f"✅ Conexion OK con {modelo}")
-            except anthropic.AuthenticationError:
-                st.error("❌ API Key invalida. Revisa que la copiaste completa desde console.anthropic.com")
-            except anthropic.PermissionDeniedError:
-                st.error("❌ Tu plan no tiene acceso a este modelo. Prueba otro modelo del selector.")
-            except anthropic.NotFoundError:
-                st.error("❌ Modelo no disponible. Selecciona otro modelo.")
-            except Exception as e:
-                st.error(f"❌ Error: {e}")
-        st.success("✅ API Key configurada")
-    else:
-        st.warning("⚠️ Ingresa tu API Key para comenzar")
 
     st.markdown("---")
 
