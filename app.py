@@ -8,6 +8,7 @@ import anthropic
 import json
 import os
 import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -555,18 +556,40 @@ TOOLS = [
 ]
 
 
+def call_claude_with_retry(client, modelo, system, tools, messages, max_retries=3):
+    """Call Claude API with automatic retry on overload/rate limit errors."""
+    for attempt in range(max_retries):
+        try:
+            response = client.messages.create(
+                model=modelo,
+                max_tokens=4096,
+                system=system,
+                tools=tools,
+                messages=messages
+            )
+            return response
+        except (anthropic.OverloadedError, anthropic.RateLimitError) as e:
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 5  # 5s, 10s, 15s
+                st.toast(f"⏳ Servidor ocupado. Reintentando en {wait_time}s... (intento {attempt + 2}/{max_retries})")
+                time.sleep(wait_time)
+            else:
+                raise e
+        except anthropic.APIStatusError as e:
+            if e.status_code == 529 and attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 5
+                st.toast(f"⏳ Servidor sobrecargado. Reintentando en {wait_time}s... (intento {attempt + 2}/{max_retries})")
+                time.sleep(wait_time)
+            else:
+                raise e
+
+
 def get_ai_response(messages, api_key, modelo="claude-3-5-sonnet-20241022"):
-    """Get response from Claude with tool use support."""
+    """Get response from Claude with tool use support and auto-retry."""
     client = anthropic.Anthropic(api_key=api_key)
 
-    # Initial call
-    response = client.messages.create(
-        model=modelo,
-        max_tokens=4096,
-        system=SYSTEM_PROMPT,
-        tools=TOOLS,
-        messages=messages
-    )
+    # Initial call with retry
+    response = call_claude_with_retry(client, modelo, SYSTEM_PROMPT, TOOLS, messages)
 
     # Handle tool use loop
     max_iterations = 5
@@ -593,7 +616,6 @@ def get_ai_response(messages, api_key, modelo="claude-3-5-sonnet-20241022"):
                             parsed = json.loads(result)
                             for r in parsed[:3]:
                                 title = r.get('title', '')
-                                url = r.get('url', r.get('pmid', ''))
                                 st.write(f"  - {title}")
                         except:
                             pass
@@ -612,13 +634,7 @@ def get_ai_response(messages, api_key, modelo="claude-3-5-sonnet-20241022"):
             {"role": "user", "content": tool_results}
         ]
 
-        response = client.messages.create(
-            model=modelo,
-            max_tokens=4096,
-            system=SYSTEM_PROMPT,
-            tools=TOOLS,
-            messages=messages
-        )
+        response = call_claude_with_retry(client, modelo, SYSTEM_PROMPT, TOOLS, messages)
 
     # Extract final text
     final_text = ""
@@ -937,8 +953,13 @@ if prompt := st.chat_input("Pregunta al Agente Probioticos...") or st.session_st
                 st.error(f"❌ Permiso denegado. Tu API Key puede no tener acceso al modelo. Detalle: {str(e)}")
             except anthropic.NotFoundError as e:
                 st.error(f"❌ Modelo no encontrado. Detalle: {str(e)}")
-            except anthropic.RateLimitError:
-                st.error("⏳ Limite de velocidad alcanzado. Espera un momento e intenta de nuevo.")
+            except (anthropic.RateLimitError, anthropic.OverloadedError):
+                st.error("⏳ Servidor sobrecargado despues de 3 reintentos. Espera 1 minuto e intenta de nuevo.")
+            except anthropic.APIStatusError as e:
+                if e.status_code == 529:
+                    st.error("⏳ Servidor sobrecargado despues de 3 reintentos. Espera 1 minuto e intenta de nuevo.")
+                else:
+                    st.error(f"❌ Error API: {str(e)}")
             except Exception as e:
                 st.error(f"❌ Error: {type(e).__name__}: {str(e)}")
 
