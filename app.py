@@ -9,6 +9,42 @@ import json
 import os
 import tempfile
 from datetime import datetime
+from pathlib import Path
+
+# ── Persistent storage for conversations ──
+CONV_DIR = Path(os.path.dirname(__file__)) / "saved_conversations"
+CONV_DIR.mkdir(exist_ok=True)
+
+
+def save_conversations_to_disk(conversations):
+    """Save all conversations to a JSON file on server."""
+    data = {}
+    for name, conv in conversations.items():
+        data[name] = {
+            "fecha": conv.get("fecha", ""),
+            "messages": [{"role": m["role"], "content": m.get("display_content", m["content"])} for m in conv["messages"]]
+        }
+    with open(CONV_DIR / "conversations.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def load_conversations_from_disk():
+    """Load conversations from server JSON file."""
+    path = CONV_DIR / "conversations.json"
+    if path.exists():
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            result = {}
+            for name, conv in data.items():
+                result[name] = {
+                    "fecha": conv.get("fecha", ""),
+                    "messages": conv["messages"]
+                }
+            return result
+        except Exception:
+            return {}
+    return {}
 
 # ── Page config ──
 st.set_page_config(
@@ -529,9 +565,9 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### 💾 Conversaciones")
 
-    # Initialize saved conversations
+    # Load saved conversations from disk on first run
     if "saved_conversations" not in st.session_state:
-        st.session_state.saved_conversations = {}
+        st.session_state.saved_conversations = load_conversations_from_disk()
 
     # Save current conversation
     if st.session_state.get("messages"):
@@ -542,6 +578,7 @@ with st.sidebar:
                     "messages": list(st.session_state.messages),
                     "fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
+                save_conversations_to_disk(st.session_state.saved_conversations)
                 st.success(f"✅ Guardada: {save_name}")
             else:
                 st.warning("Escribe un nombre para guardar")
@@ -551,6 +588,9 @@ with st.sidebar:
         conv_names = list(st.session_state.saved_conversations.keys())
         selected = st.selectbox("Conversaciones guardadas", ["-- Seleccionar --"] + conv_names)
         if selected != "-- Seleccionar --":
+            fecha = st.session_state.saved_conversations[selected].get("fecha", "")
+            if fecha:
+                st.caption(f"Guardada: {fecha}")
             col_load, col_del = st.columns(2)
             with col_load:
                 if st.button("📂 Cargar", use_container_width=True):
@@ -559,6 +599,7 @@ with st.sidebar:
             with col_del:
                 if st.button("🗑️ Borrar", use_container_width=True):
                     del st.session_state.saved_conversations[selected]
+                    save_conversations_to_disk(st.session_state.saved_conversations)
                     st.rerun()
 
     # Export all conversations as JSON
@@ -587,6 +628,7 @@ with st.sidebar:
                     "messages": conv["messages"],
                     "fecha": conv.get("fecha", "importado")
                 }
+            save_conversations_to_disk(st.session_state.saved_conversations)
             st.success(f"✅ {len(data)} conversacion(es) importada(s)")
         except Exception as e:
             st.error(f"Error al importar: {e}")
