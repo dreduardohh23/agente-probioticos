@@ -54,35 +54,221 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── Custom CSS ──
+# ── Custom CSS - Dark Scientific Theme ──
 st.markdown("""
 <style>
-    .main-header {
-        background: linear-gradient(135deg, #1B3A5C 0%, #2E5E8E 50%, #3A7CA5 100%);
-        padding: 1.5rem 2rem;
-        border-radius: 10px;
-        margin-bottom: 1.5rem;
-        color: white;
+    /* ── Global Dark Theme ── */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    html, body, [data-testid="stAppViewContainer"] {
+        background-color: #0A0E1A !important;
+        color: #E2E8F0 !important;
     }
-    .main-header h1 { color: white; margin: 0; font-size: 1.8rem; }
-    .main-header p { color: #B8D4E8; margin: 0.3rem 0 0 0; font-size: 0.95rem; }
-    .status-badge {
+
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0D1321 0%, #111827 100%) !important;
+        border-right: 1px solid rgba(0, 212, 170, 0.15) !important;
+    }
+
+    div[data-testid="stSidebarContent"] {
+        padding-top: 1rem;
+    }
+
+    /* ── Header ── */
+    .main-header {
+        background: linear-gradient(135deg, #0D1321 0%, #1A1F35 40%, #0F2027 100%);
+        border: 1px solid rgba(0, 212, 170, 0.2);
+        padding: 1.8rem 2rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #00D4AA, #00B4D8, transparent);
+    }
+    .main-header h1 {
+        color: #FFFFFF;
+        margin: 0;
+        font-size: 1.9rem;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+    .main-header p {
+        color: #00D4AA;
+        margin: 0.4rem 0 0 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .header-badge {
         display: inline-block;
-        padding: 0.2rem 0.8rem;
+        padding: 0.25rem 0.75rem;
         border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(0, 212, 170, 0.15);
+        color: #00D4AA;
+        border: 1px solid rgba(0, 212, 170, 0.3);
+        margin-top: 0.5rem;
+    }
+
+    /* ── DNA Helix decoration ── */
+    .dna-decoration {
+        position: absolute;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.08;
+        font-size: 4rem;
+    }
+
+    /* ── Chat Messages ── */
+    [data-testid="stChatMessage"] {
+        border-radius: 12px !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+        background: #111827 !important;
+        margin-bottom: 0.5rem;
+    }
+
+    /* ── Buttons ── */
+    .stButton > button {
+        background: linear-gradient(135deg, #0D2137 0%, #132D46 100%) !important;
+        border: 1px solid rgba(0, 212, 170, 0.25) !important;
+        color: #E2E8F0 !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton > button:hover {
+        border-color: #00D4AA !important;
+        box-shadow: 0 0 15px rgba(0, 212, 170, 0.15) !important;
+        color: #00D4AA !important;
+    }
+
+    /* ── Download buttons ── */
+    .stDownloadButton > button {
+        background: linear-gradient(135deg, #064E3B 0%, #065F46 100%) !important;
+        border: 1px solid rgba(0, 212, 170, 0.3) !important;
+        color: #A7F3D0 !important;
+        border-radius: 8px !important;
+    }
+
+    /* ── Input fields ── */
+    .stTextInput input, .stSelectbox select, [data-testid="stTextInput"] input {
+        background: #1A1F35 !important;
+        border: 1px solid rgba(0, 212, 170, 0.2) !important;
+        color: #E2E8F0 !important;
+        border-radius: 8px !important;
+    }
+    .stTextInput input:focus, [data-testid="stTextInput"] input:focus {
+        border-color: #00D4AA !important;
+        box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.1) !important;
+    }
+
+    /* ── Chat Input ── */
+    [data-testid="stChatInput"] {
+        background: #111827 !important;
+        border: 1px solid rgba(0, 212, 170, 0.2) !important;
+        border-radius: 12px !important;
+    }
+    [data-testid="stChatInput"] textarea {
+        color: #E2E8F0 !important;
+    }
+
+    /* ── Expanders ── */
+    [data-testid="stExpander"] {
+        background: #111827 !important;
+        border: 1px solid rgba(0, 212, 170, 0.1) !important;
+        border-radius: 8px !important;
+    }
+
+    /* ── Status containers ── */
+    [data-testid="stStatusWidget"] {
+        background: #111827 !important;
+        border: 1px solid rgba(0, 180, 216, 0.2) !important;
+    }
+
+    /* ── Metrics / info cards ── */
+    .info-card {
+        background: linear-gradient(135deg, #111827 0%, #1A1F35 100%);
+        border: 1px solid rgba(0, 212, 170, 0.12);
+        border-radius: 10px;
+        padding: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+    .info-card h4 {
+        color: #00D4AA;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 0 0 0.5rem 0;
+    }
+    .info-card p {
+        color: #94A3B8;
+        font-size: 0.85rem;
+        margin: 0.2rem 0;
+        line-height: 1.5;
+    }
+
+    /* ── Spinner ── */
+    .stSpinner > div {
+        border-top-color: #00D4AA !important;
+    }
+
+    /* ── Success / Error / Warning ── */
+    [data-testid="stAlert"] {
+        border-radius: 8px !important;
+    }
+
+    /* ── Dividers ── */
+    hr {
+        border-color: rgba(0, 212, 170, 0.1) !important;
+    }
+
+    /* ── Sidebar sections ── */
+    .sidebar-section-title {
+        color: #00D4AA;
         font-size: 0.75rem;
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.5rem;
     }
-    .badge-active { background: #10B981; color: white; }
-    .badge-search { background: #F59E0B; color: white; }
-    .stChatMessage { border-radius: 10px; }
-    .sidebar-section {
-        background: #F0F4F8;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0A0E1A; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #00D4AA; }
+
+    /* ── File uploader ── */
+    [data-testid="stFileUploader"] {
+        background: #111827 !important;
+        border: 1px dashed rgba(0, 212, 170, 0.25) !important;
+        border-radius: 8px !important;
     }
-    div[data-testid="stSidebarContent"] { padding-top: 1rem; }
+
+    /* ── Selectbox ── */
+    [data-testid="stSelectbox"] > div > div {
+        background: #1A1F35 !important;
+        border-color: rgba(0, 212, 170, 0.2) !important;
+    }
+
+    /* ── Markdown links ── */
+    a { color: #00B4D8 !important; }
+    a:hover { color: #00D4AA !important; }
+
+    /* ── Remove Streamlit branding ── */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -647,8 +833,10 @@ with st.sidebar:
 # Header
 st.markdown("""
 <div class="main-header">
-    <h1>🧬 Agente Probioticos</h1>
-    <p>Celula de Innovacion | Genomma Lab | Desarrollo de Portafolio de Probioticos</p>
+    <div class="dna-decoration">🧬</div>
+    <h1>⚗️ Agente Probioticos</h1>
+    <p>Celula de Innovacion Cientifica &bull; Genomma Lab &bull; R&D Probioticos</p>
+    <span class="header-badge">● SISTEMA ACTIVO — IA + PubMed + Web Search</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -758,47 +946,65 @@ if prompt := st.chat_input("Pregunta al Agente Probioticos...") or st.session_st
 # ── Welcome message if no chat history ──
 if not st.session_state.messages:
     st.markdown("---")
-    st.markdown("### 👋 Bienvenido al Agente Probioticos")
-    st.markdown("Soy tu asistente especializado en el desarrollo del portafolio de probioticos de Genomma Lab. Puedo ayudarte con:")
+
+    st.markdown("""
+    <div style="text-align: center; padding: 1rem 0;">
+        <h3 style="color: #E2E8F0; font-weight: 600;">Sistema de Inteligencia para Innovacion en Probioticos</h3>
+        <p style="color: #64748B; font-size: 0.9rem;">Acceso a evidencia cientifica, regulacion, cadena de suministro y analisis de mercado en tiempo real</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown("""
-        **🔬 Evidencia Cientifica**
-        - Buscar en PubMed
-        - Analizar estudios clinicos
-        - Validar combinaciones
-        """)
+        <div class="info-card">
+            <h4>🔬 Evidencia Cientifica</h4>
+            <p>• Busqueda en PubMed</p>
+            <p>• Estudios clinicos RCT</p>
+            <p>• Meta-analisis</p>
+            <p>• Validacion de cepas</p>
+        </div>
+        """, unsafe_allow_html=True)
     with col2:
         st.markdown("""
-        **📋 Regulacion**
-        - COFEPRIS, FDA, ANVISA
-        - Claims permitidos
-        - Clasificacion de producto
-        """)
+        <div class="info-card">
+            <h4>📋 Regulacion Sanitaria</h4>
+            <p>• COFEPRIS (Mexico)</p>
+            <p>• FDA (USA)</p>
+            <p>• ANVISA / INVIMA</p>
+            <p>• Claims permitidos</p>
+        </div>
+        """, unsafe_allow_html=True)
     with col3:
         st.markdown("""
-        **🏭 Supply Chain**
-        - Proveedores de cepas
-        - Fabricantes berberina
-        - Contract manufacturers
-        """)
+        <div class="info-card">
+            <h4>🏭 Supply Chain</h4>
+            <p>• Proveedores de cepas</p>
+            <p>• Fabricantes CMO</p>
+            <p>• Berberina / Vitaminas</p>
+            <p>• Formas farmaceuticas</p>
+        </div>
+        """, unsafe_allow_html=True)
     with col4:
         st.markdown("""
-        **📊 Mercado**
-        - Analisis competitivo
-        - Precios y tendencias
-        - Oportunidades
-        """)
+        <div class="info-card">
+            <h4>📊 Inteligencia de Mercado</h4>
+            <p>• Analisis competitivo</p>
+            <p>• Precios y tendencias</p>
+            <p>• Gaps de mercado</p>
+            <p>• Oportunidades</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("**Ejemplos de preguntas:**")
-    examples = [
-        "Busca los ultimos estudios sobre Lactobacillus plantarum 299v y sindrome de intestino irritable",
-        "Cual es la regulacion actual de COFEPRIS para berberina en suplementos?",
-        "Compara los precios de los principales probioticos en farmacias de Mexico",
-        "Busca proveedores de Bacillus coagulans GanedenBC30 con capacidad de suministro a Mexico",
-        "Que formas farmaceuticas innovadoras estan usando las marcas lideres de probioticos?",
-    ]
-    for ex in examples:
-        st.markdown(f"- *{ex}*")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style="background: #111827; border: 1px solid rgba(0,212,170,0.1); border-radius: 10px; padding: 1.2rem;">
+        <p style="color: #00D4AA; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.8rem;">Consultas sugeridas</p>
+        <p style="color: #94A3B8; font-size: 0.85rem; margin: 0.4rem 0;">→ Busca los ultimos estudios sobre L. plantarum 299v y SII</p>
+        <p style="color: #94A3B8; font-size: 0.85rem; margin: 0.4rem 0;">→ Regulacion COFEPRIS para berberina en suplementos</p>
+        <p style="color: #94A3B8; font-size: 0.85rem; margin: 0.4rem 0;">→ Compara precios de probioticos en farmacias de Mexico</p>
+        <p style="color: #94A3B8; font-size: 0.85rem; margin: 0.4rem 0;">→ Proveedores de B. coagulans GanedenBC30 para Mexico</p>
+        <p style="color: #94A3B8; font-size: 0.85rem; margin: 0.4rem 0;">→ Formas farmaceuticas innovadoras en marcas lideres</p>
+    </div>
+    """, unsafe_allow_html=True)
