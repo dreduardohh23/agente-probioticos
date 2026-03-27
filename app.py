@@ -525,9 +525,75 @@ with st.sidebar:
         **Competidores:** Floratil, Enterogermina, Culturelle, Align, Seed
         """)
 
-    # Clear chat
+    # ── Conversation management ──
     st.markdown("---")
-    if st.button("🗑️ Limpiar conversacion", use_container_width=True):
+    st.markdown("### 💾 Conversaciones")
+
+    # Initialize saved conversations
+    if "saved_conversations" not in st.session_state:
+        st.session_state.saved_conversations = {}
+
+    # Save current conversation
+    if st.session_state.get("messages"):
+        save_name = st.text_input("Nombre para guardar", placeholder="Ej: Investigacion berberina")
+        if st.button("💾 Guardar conversacion", use_container_width=True):
+            if save_name:
+                st.session_state.saved_conversations[save_name] = {
+                    "messages": list(st.session_state.messages),
+                    "fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+                st.success(f"✅ Guardada: {save_name}")
+            else:
+                st.warning("Escribe un nombre para guardar")
+
+    # Load saved conversation
+    if st.session_state.saved_conversations:
+        conv_names = list(st.session_state.saved_conversations.keys())
+        selected = st.selectbox("Conversaciones guardadas", ["-- Seleccionar --"] + conv_names)
+        if selected != "-- Seleccionar --":
+            col_load, col_del = st.columns(2)
+            with col_load:
+                if st.button("📂 Cargar", use_container_width=True):
+                    st.session_state.messages = list(st.session_state.saved_conversations[selected]["messages"])
+                    st.rerun()
+            with col_del:
+                if st.button("🗑️ Borrar", use_container_width=True):
+                    del st.session_state.saved_conversations[selected]
+                    st.rerun()
+
+    # Export all conversations as JSON
+    if st.session_state.saved_conversations:
+        export_data = {}
+        for name, conv in st.session_state.saved_conversations.items():
+            export_data[name] = {
+                "fecha": conv["fecha"],
+                "messages": [{"role": m["role"], "content": m.get("display_content", m["content"])} for m in conv["messages"]]
+            }
+        st.download_button(
+            "⬇️ Exportar todas (.json)",
+            data=json.dumps(export_data, ensure_ascii=False, indent=2),
+            file_name="conversaciones_probioticos.json",
+            mime="application/json",
+            use_container_width=True
+        )
+
+    # Import conversations
+    imported = st.file_uploader("Importar conversaciones", type=["json"], key="import_conv")
+    if imported:
+        try:
+            data = json.loads(imported.read().decode("utf-8"))
+            for name, conv in data.items():
+                st.session_state.saved_conversations[name] = {
+                    "messages": conv["messages"],
+                    "fecha": conv.get("fecha", "importado")
+                }
+            st.success(f"✅ {len(data)} conversacion(es) importada(s)")
+        except Exception as e:
+            st.error(f"Error al importar: {e}")
+
+    # New / clear conversation
+    st.markdown("---")
+    if st.button("🆕 Nueva conversacion", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
