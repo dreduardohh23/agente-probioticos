@@ -659,7 +659,7 @@ with st.sidebar:
         st.session_state.authenticated = False
 
     # Dashboard link
-    st.page_link("pages/Dashboard.py", label="📊 Dashboard Estrategico", icon="📊")
+    st.markdown("[📊 **Abrir Dashboard Estrategico**](/Dashboard)", unsafe_allow_html=True)
     st.markdown("---")
 
     if API_KEY_SECRET and TEAM_PASSWORD:
