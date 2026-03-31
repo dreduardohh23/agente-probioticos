@@ -658,6 +658,10 @@ with st.sidebar:
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
 
+    # Dashboard link
+    st.page_link("pages/Dashboard.py", label="📊 Dashboard Estrategico", icon="📊")
+    st.markdown("---")
+
     if API_KEY_SECRET and TEAM_PASSWORD:
         # Mode: team access with password
         if not st.session_state.authenticated:
