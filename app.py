@@ -731,9 +731,22 @@ def get_ai_response(messages, api_key, modelo="claude-3-5-sonnet-20241022"):
                     "content": result
                 })
 
+        # Serialize assistant content blocks for API
+        assistant_content = []
+        for block in response.content:
+            if block.type == "text":
+                assistant_content.append({"type": "text", "text": block.text})
+            elif block.type == "tool_use":
+                assistant_content.append({
+                    "type": "tool_use",
+                    "id": block.id,
+                    "name": block.name,
+                    "input": block.input
+                })
+
         # Continue conversation with tool results
         messages = messages + [
-            {"role": "assistant", "content": response.content},
+            {"role": "assistant", "content": assistant_content},
             {"role": "user", "content": tool_results}
         ]
 
@@ -801,7 +814,7 @@ with st.sidebar:
     # Model selector
     modelo = st.selectbox(
         "Modelo Claude",
-        ["claude-3-5-sonnet-20241022", "claude-sonnet-4-20250514", "claude-3-haiku-20240307"],
+        ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"],
         index=0,
         help="Si un modelo da error, prueba otro"
     )
@@ -1241,6 +1254,8 @@ if prompt := st.chat_input("Pregunta al Agente Probioticos...") or st.session_st
                 st.error(f"❌ Modelo no encontrado. Detalle: {str(e)}")
             except (anthropic.RateLimitError, anthropic.OverloadedError):
                 st.error("⏳ Servidor sobrecargado despues de 3 reintentos. Espera 1 minuto e intenta de nuevo.")
+            except AttributeError as e:
+                st.error(f"❌ Error procesando respuesta. Intenta de nuevo o cambia de modelo.\n\nDetalle: {str(e)}")
             except anthropic.APIStatusError as e:
                 if e.status_code == 529:
                     st.error("⏳ Servidor sobrecargado despues de 3 reintentos. Espera 1 minuto e intenta de nuevo.")
