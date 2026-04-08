@@ -69,10 +69,38 @@ st.markdown("""
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0D1321 0%, #111827 100%) !important;
         border-right: 1px solid rgba(0, 212, 170, 0.15) !important;
+        min-width: 310px !important;
     }
 
     div[data-testid="stSidebarContent"] {
         padding-top: 1rem;
+    }
+
+    /* ── Sidebar collapse/expand button — make it VERY visible ── */
+    button[data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    button[kind="header"] {
+        background-color: #00D4AA !important;
+        color: #0A0E1A !important;
+        border: 2px solid #00D4AA !important;
+        border-radius: 8px !important;
+        width: 40px !important;
+        height: 40px !important;
+        top: 12px !important;
+        left: 12px !important;
+        z-index: 9999 !important;
+        opacity: 1 !important;
+        box-shadow: 0 2px 10px rgba(0, 212, 170, 0.4) !important;
+    }
+    button[data-testid="stSidebarCollapsedControl"]:hover,
+    [data-testid="collapsedControl"]:hover {
+        background-color: #00FFD0 !important;
+        box-shadow: 0 4px 20px rgba(0, 212, 170, 0.6) !important;
+    }
+    button[data-testid="stSidebarCollapsedControl"] svg,
+    [data-testid="collapsedControl"] svg {
+        fill: #0A0E1A !important;
+        stroke: #0A0E1A !important;
     }
 
     /* ── Header ── */
