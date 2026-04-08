@@ -294,10 +294,13 @@ st.markdown("""
     a { color: #00B4D8 !important; }
     a:hover { color: #00D4AA !important; }
 
-    /* ── Remove Streamlit branding ── */
+    /* ── Remove Streamlit branding (keep header for sidebar toggle) ── */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        backdrop-filter: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -680,8 +683,14 @@ with st.sidebar:
     st.markdown("### ⚙️ Configuracion")
 
     # ── Team authentication ──
-    TEAM_PASSWORD = st.secrets.get("TEAM_PASSWORD", "")
-    API_KEY_SECRET = st.secrets.get("ANTHROPIC_API_KEY", "")
+    try:
+        TEAM_PASSWORD = st.secrets.get("TEAM_PASSWORD", "")
+    except Exception:
+        TEAM_PASSWORD = ""
+    try:
+        API_KEY_SECRET = st.secrets.get("ANTHROPIC_API_KEY", "")
+    except Exception:
+        API_KEY_SECRET = ""
 
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
