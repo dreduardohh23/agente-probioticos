@@ -671,7 +671,7 @@ def call_claude_with_retry(client, modelo, system, tools, messages, max_retries=
                 messages=messages
             )
             return response
-        except (anthropic.OverloadedError, anthropic.RateLimitError) as e:
+        except anthropic.RateLimitError as e:
             if attempt < max_retries - 1:
                 wait_time = (attempt + 1) * 5  # 5s, 10s, 15s
                 st.toast(f"⏳ Servidor ocupado. Reintentando en {wait_time}s... (intento {attempt + 2}/{max_retries})")
@@ -679,7 +679,7 @@ def call_claude_with_retry(client, modelo, system, tools, messages, max_retries=
             else:
                 raise e
         except anthropic.APIStatusError as e:
-            if e.status_code == 529 and attempt < max_retries - 1:
+            if e.status_code in (429, 529) and attempt < max_retries - 1:
                 wait_time = (attempt + 1) * 5
                 st.toast(f"⏳ Servidor sobrecargado. Reintentando en {wait_time}s... (intento {attempt + 2}/{max_retries})")
                 time.sleep(wait_time)
@@ -1252,10 +1252,8 @@ if prompt := st.chat_input("Pregunta al Agente Probioticos...") or st.session_st
                 st.error(f"❌ Permiso denegado. Tu API Key puede no tener acceso al modelo. Detalle: {str(e)}")
             except anthropic.NotFoundError as e:
                 st.error(f"❌ Modelo no encontrado. Detalle: {str(e)}")
-            except (anthropic.RateLimitError, anthropic.OverloadedError):
+            except anthropic.RateLimitError:
                 st.error("⏳ Servidor sobrecargado despues de 3 reintentos. Espera 1 minuto e intenta de nuevo.")
-            except AttributeError as e:
-                st.error(f"❌ Error procesando respuesta. Intenta de nuevo o cambia de modelo.\n\nDetalle: {str(e)}")
             except anthropic.APIStatusError as e:
                 if e.status_code == 529:
                     st.error("⏳ Servidor sobrecargado despues de 3 reintentos. Espera 1 minuto e intenta de nuevo.")
