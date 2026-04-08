@@ -12,25 +12,97 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-# ── Persistent storage for conversations ──
+# ── Persistent storage for conversations (GitHub API) ──
+import requests
+import base64
+
+GITHUB_REPO = "dreduardohh23/agente-probioticos"
+GITHUB_FILE_PATH = "saved_conversations/conversations.json"
 CONV_DIR = Path(os.path.dirname(__file__)) / "saved_conversations"
 CONV_DIR.mkdir(exist_ok=True)
 
 
+def _get_github_token():
+    """Get GitHub token from Streamlit secrets."""
+    try:
+        return st.secrets.get("GITHUB_TOKEN", "")
+    except Exception:
+        return ""
+
+
+def _github_read_file():
+    """Read conversations.json from GitHub repo."""
+    token = _get_github_token()
+    if not token:
+        return None, None
+    try:
+        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+        resp = requests.get(url, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            content = resp.json()
+            file_content = base64.b64decode(content["content"]).decode("utf-8")
+            sha = content["sha"]
+            return json.loads(file_content), sha
+        return {}, None
+    except Exception:
+        return None, None
+
+
+def _github_write_file(data, sha=None):
+    """Write conversations.json to GitHub repo."""
+    token = _get_github_token()
+    if not token:
+        return False
+    try:
+        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+        content_b64 = base64.b64encode(json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")).decode("utf-8")
+        payload = {
+            "message": "Auto-save conversations",
+            "content": content_b64,
+            "branch": "main"
+        }
+        if sha:
+            payload["sha"] = sha
+        resp = requests.put(url, headers=headers, json=payload, timeout=15)
+        return resp.status_code in (200, 201)
+    except Exception:
+        return False
+
+
 def save_conversations_to_disk(conversations):
-    """Save all conversations to a JSON file on server."""
+    """Save conversations to GitHub (persistent) + local fallback."""
     data = {}
     for name, conv in conversations.items():
         data[name] = {
             "fecha": conv.get("fecha", ""),
             "messages": [{"role": m["role"], "content": m.get("display_content", m["content"])} for m in conv["messages"]]
         }
-    with open(CONV_DIR / "conversations.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    # Save locally as fallback
+    try:
+        with open(CONV_DIR / "conversations.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+    # Save to GitHub (persistent across deploys)
+    _, sha = _github_read_file()
+    _github_write_file(data, sha)
 
 
 def load_conversations_from_disk():
-    """Load conversations from server JSON file."""
+    """Load conversations from GitHub first, then local fallback."""
+    # Try GitHub first (persistent)
+    gh_data, _ = _github_read_file()
+    if gh_data and isinstance(gh_data, dict) and len(gh_data) > 0:
+        result = {}
+        for name, conv in gh_data.items():
+            result[name] = {
+                "fecha": conv.get("fecha", ""),
+                "messages": conv["messages"]
+            }
+        return result
+    # Local fallback
     path = CONV_DIR / "conversations.json"
     if path.exists():
         try:
